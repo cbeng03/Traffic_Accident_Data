@@ -1,0 +1,379 @@
+## I got traffic accident report data from https://www.kaggle.com/datasets/sobhanmoosavi/us-accidents?resource=download and wanted to analyze it using Python, MySQL and Tableau
+## After reviewing the file, I decided I wanted to introduce another data source that I could use in conjunction with the first to derive insights on accidents per capita
+## I downloaded a csv from https://simplemaps.com/data/us-zips that gave me all zipcodes in the US along with their respective cities, states, and population counts
+
+## Below is the code I used to create a table in MySQL that would eventually house the data from SimpleMaps. Pretty basic.
+
+CREATE TABLE traffic_project.zip_code_table ( 
+
+	zip_code int NOT NULL 
+
+    , city VARCHAR(255) 
+
+    , state_id VARCHAR(5) 
+
+    , state_name VARCHAR(255) 
+
+    , population INTEGER 
+
+    , PRIMARY KEY (zip_code) 
+
+); 
+
+## From here, I used Python to read the csv file containing that population data and import it into my MySQL table
+
+pip install pandas mysql-connector-python
+
+import pandas as pd
+import mysql.connector
+
+connection = mysql.connector.connect(
+    host="localhost",
+    user="****",
+    password="*****",
+    database="traffic_project"
+)
+
+csv_file = r"C:\Users\CharlesBengtson\OneDrive - ***********\Desktop\Traffic Report Project\UZ_Zip_City_Population_csv.csv"
+df = pd.read_csv(csv_file)
+
+cursor = connection.cursor()
+
+for index, row in df.iterrows():
+    row = row.where(pd.notnull(row), None)
+    try:
+        cursor.execute("INSERT IGNORE INTO zip_code_table (zip_code, city, state_id, state_name, population) VALUES (%s, %s, %s, %s, %s)", (row['zip_code'], row['city'], row['state_id'], row['state_name'], row['population']))
+    except mysql.connector.Error as err:
+        print("Error:", err)  # Print the error for debugging purposes
+
+connection.commit()
+
+cursor.close()
+connection.close()
+
+## I would have done something similar for the csv file containing traffic accident data, but it contained over seven million rows, and Python continued to encounter issues
+## So I opted to use MySQL's LOAD DATA INFILE statement. First I had to create the table in MySQL that would house that data:
+
+CREATE TABLE traffic_project.accidents_report ( 
+
+		accident_id Varchar(255) NOT NULL 
+
+        , accident_source VARCHAR(255) 
+
+        , accident_severity INTEGER 
+
+        , start_time DATETIME  
+
+        , end_time DATETIME 
+
+        , start_lat DECIMAL (40,30) 
+
+        , start_lng DECIMAL (40,30) 
+
+        , end_lat DECIMAL (40,30) 
+
+        , end_lng DECIMAL (40,30) 
+
+        , accident_distance DECIMAL (3,2) 
+
+        , accident_description VARCHAR(255) 
+
+        , accident_street VARCHAR(255) 
+
+        , accident_city VARCHAR(255) 
+
+        , accident_county VARCHAR(255) 
+
+        , state_id VARCHAR(5) 
+
+        , zip_code VARCHAR(20) 
+
+        , country VARCHAR(10) 
+
+        , timezone VARCHAR(100) 
+
+        , airport_code VARCHAR(10) 
+
+        , weather_timestamp DATETIME 
+
+        , temperature DECIMAL(3,2) 
+
+        , wind_chill DECIMAL(3,2) 
+
+        , humidity_percentage DECIMAL(3,2) 
+
+        , pressure DECIMAL(3,2) 
+
+        , visibility DECIMAL(3,2) 
+
+        , wind_direction VARCHAR(20) 
+
+        , wind_speed_mph DECIMAL(3,2) 
+
+        , precipitation DECIMAL(3,2) 
+
+        , weather_condition VARCHAR(255) 
+
+		, amenity VARCHAR(10) 
+
+        , bump VARCHAR(10) 
+
+        , crossing VARCHAR(10) 
+
+        , give_way VARCHAR(10) 
+
+        , junction VARCHAR(10) 
+
+        , no_exit VARCHAR(10) 
+
+        , railway VARCHAR(10) 
+
+        , roundabout VARCHAR(10) 
+
+        , station VARCHAR(10) 
+
+        , existence_of_stop VARCHAR(10) 
+
+        , traffic_calming VARCHAR(10) 
+
+	 , traffic_signal VARCHAR(10) 
+
+        , turning_loop VARCHAR(10) 
+
+        , sunrise_sunset VARCHAR(100) 
+
+        , civil_twilight VARCHAR(100) 
+
+        , nautical_twilight VARCHAR(100) 
+
+        , astronomical_twilight VARCHAR(100) 
+
+        , PRIMARY KEY (accident_id) 
+
+); 
+
+
+## Below is the LOAD DATA INFILE statement, a very powerful technique that imported millions of rows into my table at once:
+
+LOAD DATA INFILE "C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/US_Accidents_March23-15.csv" 
+
+INTO TABLE accidents_data  
+
+FIELDS TERMINATED BY ',' 
+
+LINES TERMINATED BY '\n' 
+
+IGNORE 1 LINES 
+
+(accident_id, accident_source, @accident_severity, start_time, end_time, @start_lat, @start_lng, @end_lat, @end_lng, @accident_distance, @accident_description, accident_street, accident_city, accident_county, state_id, zip_code, country, timezone, @airport_code, weather_timestamp, @temperature, @wind_chill, @humidity_percentage, @pressure, @visibility, wind_direction, @wind_speed_mph, @precipitation, weather_condition, amenity, bump, crossing, give_way, junction, no_exit, railway, roundabout, station, existence_of_stop, traffic_calming, traffic_signal, turning_loop, sunrise_sunset, civil_twilight, nautical_twilight, astronomical_twilight) 
+
+SET start_lat = NULLIF(REPLACE(@start_lat, '"', ''),'')  
+
+    , start_lng = NULLIF(REPLACE(@start_lng,'"',''),'') 
+
+    , end_lat = NULLIF(REPLACE(@end_lat,'"',''),'') 
+
+    , end_lng = NULLIF(REPLACE(@end_lng,'"',''),'') 
+
+    , accident_distance = NULLIF(REPLACE(@accident_distance,'"',''),'') 
+
+    , temperature = NULLIF(REPLACE(@temperature,'"',''),'') 
+
+    , accident_severity = NULLIF(REPLACE(@accident_severity,'"',''),'') 
+
+    , wind_chill = NULLIF(REPLACE(@wind_chill,'"',''),'') 
+
+    , humidity_percentage = NULLIF(REPLACE(@humidity_percentage,'"',''),'') 
+
+    , pressure = NULLIF(REPLACE(@pressure,'"',''),'') 
+
+    , visibility = NULLIF(REPLACE(@visibility,'"',''),'') 
+
+    , wind_speed_mph = LEFT(NULLIF(REPLACE(@wind_speed_mph,'"',''),''),5) 
+
+    , precipitation = NULLIF(REPLACE(@precipitation,'"',''),'') 
+
+    #/, accident_description = LEFT(@accident_description,255); 
+
+    #/, airport_code = LEFT(@airport_code,11); 
+
+
+## This data was messy, much of it contained needless quotation marks, and certain data types in my table had to be changed during the upload. So I created a view that had cleaner versions of the data:
+
+CREATE VIEW cleaned_accident_data AS 
+
+select CAST(replace(replace(accident_id, '"',''),'A-','') as SIGNED) AS column_id 
+
+, replace(accident_source,'"','') as accident_source 
+
+, accident_severity 
+
+, STR_TO_DATE(replace(start_time, '"',''),'%Y-%m-%d %H:%i:%s') as start_time_date 
+
+, STR_TO_DATE(replace(end_time, '"',''),'%Y-%m-%d %H:%i:%s') as end_time_date 
+
+, left(start_lat,10) as start_lat 
+
+, left(start_lng,10) as start_lng 
+
+, left(end_lat,10) as end_lat 
+
+, left(end_lng,10) as end_lng 
+
+, accident_distance as accident_distance_mi 
+
+, replace(accident_description, '"','') as accident_description 
+
+, replace(accident_street,'"','') as accident_street 
+
+, replace(accident_city,'"','') as accident_city 
+
+, replace(accident_county,'"','') as accident_county 
+
+, replace(state_id,'"','') as state_id 
+
+, concat(replace(accident_city,'"',''),' ',replace(state_id,'"','')) as city_state 
+
+, CAST(replace(zip_code,'"','') as SIGNED) as zip_code 
+
+, replace(country,'"','') as country 
+
+, replace(timezone,'"','') as timezone 
+
+, replace(airport_code,'"','') as airport_code 
+
+, STR_TO_DATE(replace(weather_timestamp, '"',''),'%Y-%m-%d %H:%i:%s') as weather_timestamp 
+
+, temperature 
+
+, wind_chill 
+
+, humidity_percentage 
+
+, pressure 
+
+, visibility 
+
+, replace(wind_direction,'"','') as wind_direction 
+
+, wind_speed_mph 
+
+, precipitation 
+
+, replace(weather_condition,'"','') as weather_condition 
+
+, replace(amenity,'"','') as amenity 
+
+, replace(bump,'"','') as bump 
+
+, replace(crossing,'"','') as crossing 
+
+, replace(give_way,'"','') as give_way 
+
+, replace(junction,'"','') as junction 
+
+, replace(no_exit,'"','') as no_exit 
+
+, replace(railway,'"','') as railway 
+
+, replace(roundabout,'"','') as roundabout 
+
+, replace(station,'"','') as station 
+
+, replace(existence_of_stop,'"','') as existence_of_stop 
+
+, replace(traffic_calming,'"','') as traffic_calming 
+
+, replace(traffic_signal,'"','') as traffic_signal 
+
+, replace(turning_loop,'"','') as turning_loop 
+
+, replace(sunrise_sunset,'"','') as sunrise_sunset 
+
+, replace(civil_twilight,'"','') as civil_twilight 
+
+, replace(nautical_twilight,'"','') as nautical_twilight 
+
+, replace(astronomical_twilight,'"','') as astronomical_twilight 
+
+from accidents_data 
+
+order by column_id; 
+
+
+## Now that I had a view with cleaner data, I could begin querying it. I started testing some joins using the city_state column that I had created in my view along with a similar column I concatenated on the zip code table:
+## Combining both tables I was able to discern per capita data, as I did below for the city of Minneapolis, MN:
+
+with population_cte as ( 
+
+	select sum(population) as city_population 
+
+	, concat(city,' ',state_id) as city_state_zip_table 
+
+	from zip_code_table 
+
+	group by city_state_zip_table 
+
+) 
+
+select count(a.column_id)/b.city_population as per_capita_accidents 
+
+, city_state 
+
+from cleaned_accident_data a 
+
+left join population_cte b 
+
+	on a.city_state = b.city_state_zip_table 
+
+where city_state like '%Minneapolis%' 
+
+group by city_state, b.city_population; 
+
+## Below I find the city in America with the highest rate of severe incidents per Capita. It turned out to be Shawnee, Colorado - a city of 89 people, and likely one that is frequently driven through en route to other places 
+
+with population_cte as ( 
+
+	select sum(population) as city_population 
+
+	, concat(city,' ',state_id) as city_state_zip_table 
+
+	from zip_code_table 
+
+	group by city_state_zip_table 
+
+) 
+
+select count(a.column_id)/b.city_population as per_capita_accidents 
+
+, city_state 
+
+from cleaned_accident_data a 
+
+left join population_cte b 
+
+	on a.city_state = b.city_state_zip_table 
+
+where a.accident_severity = 4 
+
+group by city_state, b.city_population 
+
+order by per_capita_accidents desc 
+
+LIMIT 1; 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
