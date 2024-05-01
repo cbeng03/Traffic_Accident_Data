@@ -399,10 +399,32 @@ from cleaned_accident_data a
 group by time_of_day
 
 
+## Certain queries were timing out in MySQL, so I used Python to execute them as done below:
 
+import mysql.connector
 
+import pandas as pd
 
+conn = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="Lmnep.1aadd",
+    database="traffic_project"
+)
 
+cursor = conn.cursor()
+
+query = "select DAYOFWEEK(start_time_date) as day_of_week, count(column_id) from cleaned_accident_data group by day_of_week;"
+cursor.execute(query)
+
+rows = cursor.fetchall()
+
+for row in rows:
+    print(row)
+
+df = pd.DataFrame(rows, columns=[desc[0] for desc in cursor.description])
+
+df.to_csv("output.csv", index=False) ##this gave me a csv of my results
 
 
 
