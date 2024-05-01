@@ -380,6 +380,26 @@ group by a.zip_code, b.zip_population
 order by per_capita_accidents desc
 
 
+## Below is a query to identify the frequency of accidents during varying parts of the day:
+
+select 
+CASE
+	WHEN date_format(a.start_time_date, '%h:%i') between '03:00' and '06:00' THEN 'Early Morning (3-6 AM)'
+    WHEN date_format(a.start_time_date, '%h:%i') between '06:01' and '10:00' THEN 'Morning (6-10 AM)'
+    WHEN date_format(a.start_time_date, '%h:%i') between '10:01' and '11:59' THEN 'Late Morning (10-12 AM)'
+    WHEN date_format(a.start_time_date, '%h:%i') between '12:00' and '14:00' THEN 'Early Afternoon (12-2 PM)'
+    WHEN date_format(a.start_time_date, '%h:%i') between '14:01' and '17:00' THEN 'Late Afteroon (2-5 PM)'
+    WHEN date_format(a.start_time_date, '%h:%i') between '17:01' and '19:00' THEN 'Early Evening (5-7 PM)'
+    WHEN date_format(a.start_time_date, '%h:%i') between '19:01' and '22:00' THEN 'Evening (10-7 PM)'
+    WHEN date_format(a.start_time_date, '%h:%i') between '22:01' and '00:00' THEN 'Late Evening (10-12 PM/AM)'
+    WHEN date_format(a.start_time_date, '%h:%i') between '00:01' and '02:59' THEN 'Dead of Night (12-3 AM)'
+ELSE 'error' END AS time_of_day
+, count(column_id) as num_of_accidents
+from cleaned_accident_data a
+group by time_of_day
+
+
+
 
 
 
