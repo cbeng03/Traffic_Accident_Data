@@ -362,6 +362,23 @@ order by per_capita_accidents desc
 
 LIMIT 1; 
 
+## Below I edited the above queries to reflect severe accidents per capita by zip code:
+
+with population_cte as (
+	select population as zip_population
+    , zip_code
+    from zip_code_table
+)
+
+select count(a.column_id)/b.zip_population as per_capita_accidents
+, a.zip_code
+from cleaned_accident_data a
+left join population_cte b
+	on a.zip_code = b.zip_code
+where a.accident_severity = 4
+group by a.zip_code, b.zip_population
+order by per_capita_accidents desc
+
 
 
 
