@@ -427,6 +427,15 @@ df = pd.DataFrame(rows, columns=[desc[0] for desc in cursor.description])
 df.to_csv("output.csv", index=False) ##this gave me a csv of my results
 
 
+## used Pandas in Python to get a representative sample of my original file, reducing row count to 500k
+
+import pandas as pd
+
+df = pd.read_csv(r"C:\Users\Charles\OneDrive - ************\Desktop\Traffic Report Project\US_Accidents_March23.csv")
+
+sample_df = df.sample(n=500000, random_state=42)
+
+sample_df.to_csv('sampled_data_traffic_accidents.csv', index=False)
 
 
 
