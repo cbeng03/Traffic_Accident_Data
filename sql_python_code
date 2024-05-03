@@ -165,7 +165,13 @@ LINES TERMINATED BY '\n'
 
 IGNORE 1 LINES 
 
-(accident_id, accident_source, @accident_severity, start_time, end_time, @start_lat, @start_lng, @end_lat, @end_lng, @accident_distance, @accident_description, accident_street, accident_city, accident_county, state_id, zip_code, country, timezone, @airport_code, weather_timestamp, @temperature, @wind_chill, @humidity_percentage, @pressure, @visibility, wind_direction, @wind_speed_mph, @precipitation, weather_condition, amenity, bump, crossing, give_way, junction, no_exit, railway, roundabout, station, existence_of_stop, traffic_calming, traffic_signal, turning_loop, sunrise_sunset, civil_twilight, nautical_twilight, astronomical_twilight) 
+(accident_id, accident_source, @accident_severity, start_time, end_time, @start_lat, 
+@start_lng, @end_lat, @end_lng, @accident_distance, @accident_description, accident_street, 
+accident_city, accident_county, state_id, zip_code, country, timezone, @airport_code, weather_timestamp, 
+@temperature, @wind_chill, @humidity_percentage, @pressure, @visibility, wind_direction, @wind_speed_mph, 
+@precipitation, weather_condition, amenity, bump, crossing, give_way, junction, no_exit, railway, 
+roundabout, station, existence_of_stop, traffic_calming, traffic_signal, turning_loop, sunrise_sunset, 
+civil_twilight, nautical_twilight, astronomical_twilight) 
 
 SET start_lat = NULLIF(REPLACE(@start_lat, '"', ''),'')  
 
